@@ -13,9 +13,9 @@ import io.airbyte.cdk.message.DestinationStreamComplete
 import io.airbyte.cdk.message.DestinationStreamIncomplete
 import io.airbyte.cdk.message.SpilledRawMessagesLocalFile
 import io.airbyte.cdk.write.StreamLoader
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.micronaut.context.annotation.Secondary
 import jakarta.inject.Singleton
-import kotlin.io.path.bufferedReader
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -36,28 +36,36 @@ class DefaultProcessRecordsTask(
     private val deserializer: Deserializer<DestinationMessage>,
 ) : ProcessRecordsTask {
     override suspend fun execute() {
+        val log = KotlinLogging.logger {}
+
+        log.info { "Processing records from ${fileEnvelope.batch.localFile}" }
         val nextBatch =
             withContext(Dispatchers.IO) {
-                val records =
-                    fileEnvelope.batch.localPath
-                        .bufferedReader(Charsets.UTF_8)
-                        .lineSequence()
-                        .map {
-                            when (val message = deserializer.deserialize(it)) {
-                                is DestinationStreamAffinedMessage -> message
-                                else ->
-                                    throw IllegalStateException(
-                                        "Expected record message, got ${message::class}"
-                                    )
+                fileEnvelope.batch.localFile.toFileReader().use { reader ->
+                    val records =
+                        reader
+                            .lines()
+                            .map {
+                                when (val message = deserializer.deserialize(it)) {
+                                    is DestinationStreamAffinedMessage -> message
+                                    else ->
+                                        throw IllegalStateException(
+                                            "Expected record message, got ${message::class}"
+                                        )
+                                }
                             }
-                        }
-                        .takeWhile {
-                            it !is DestinationStreamComplete && it !is DestinationStreamIncomplete
-                        }
-                        .map { it as DestinationRecord }
-                        .iterator()
-                streamLoader.processRecords(records, fileEnvelope.batch.totalSizeBytes)
+                            .takeWhile {
+                                it !is DestinationStreamComplete &&
+                                    it !is DestinationStreamIncomplete
+                            }
+                            .map { it as DestinationRecord }
+                            .iterator()
+                    streamLoader.processRecords(records, fileEnvelope.batch.totalSizeBytes)
+                }
             }
+
+        log.info { "Processing complete, deleting ${fileEnvelope.batch.localFile}" }
+        fileEnvelope.batch.localFile.delete()
 
         val wrapped = fileEnvelope.withBatch(nextBatch)
         taskLauncher.handleNewBatch(streamLoader, wrapped)
