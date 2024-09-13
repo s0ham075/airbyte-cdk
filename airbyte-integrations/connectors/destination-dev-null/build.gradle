@@ -1,17 +1,66 @@
 plugins {
-    id 'airbyte-java-connector'
+    id 'application'
+    //id 'airbyte-java-connector'
+    id 'airbyte-bulk-connector'
+    id 'java-test-fixtures'
 }
 
-airbyteJavaConnector {
-    cdkVersionRequired = '0.45.0'
-    features = ['db-destinations']
-    useLocalCdk = true
+airbyteBulkConnector {
+    core = 'load'
+    toolkits = []
+    cdk = 'local'
 }
+
+//airbyteJavaConnector {
+//    cdkVersionRequired = '0.46.0'
+//    features = ['db-destinations', 's3-destinations', 'typing-deduping']
+//    useLocalCdk = false
+//}
 
 application {
-    mainClass = 'io.airbyte.integrations.destination.dev_null.TestingDestinations'
-    applicationDefaultJvmArgs = ['-XX:+ExitOnOutOfMemoryError', '-XX:MaxRAMPercentage=75.0']
+    mainClass = 'io.airbyte.integrations.destination.dev_null.DevNullDestination'
+    //applicationDefaultJvmArgs = ['-XX:+ExitOnOutOfMemoryError', '-XX:MaxRAMPercentage=75.0']
+
+    // Uncomment and replace to run locally
+    applicationDefaultJvmArgs = ['-XX:+ExitOnOutOfMemoryError', '-XX:MaxRAMPercentage=75.0', '--add-opens', 'java.base/java.lang=ALL-UNNAMED']
+}
+
+// Uncomment to run locally
+run {
+    standardInput = System.in
+}
+
+//dependencies {
+//    implementation project(':airbyte-cdk:bulk:core:bulk-cdk-core-load')
+//    implementation project(':airbyte-cdk:bulk:core:bulk-cdk-core-base')
+//
+//    testImplementation project(':airbyte-cdk:bulk:core:bulk-cdk-core-load')
+//    testImplementation project(':airbyte-cdk:bulk:core:bulk-cdk-core-base')
+//
+//    testImplementation(testFixtures(project(":airbyte-cdk:bulk:core:bulk-cdk-core-load")))
+//    testImplementation(testFixtures(project(":airbyte-cdk:bulk:core:bulk-cdk-core-base")))
+//}
+
+sourceSets {
+    integrationTest {
+        kotlin.srcDir 'src/test-integration/kotlin' // Adjust if using Java
+        resources.srcDir 'src/test-integration/resources'
+        compileClasspath += sourceSets.main.output + sourceSets.testFixtures.output
+        runtimeClasspath += sourceSets.main.output + sourceSets.testFixtures.output
+    }
+}
+
+configurations {
+    integrationTestImplementation.extendsFrom testImplementation
+    integrationTestRuntimeOnly.extendsFrom testRuntimeOnly
 }
 
 dependencies {
+    implementation project(':airbyte-cdk:bulk:core:bulk-cdk-core-load')
+    implementation project(':airbyte-cdk:bulk:core:bulk-cdk-core-base')
+
+    testImplementation project(':airbyte-cdk:bulk:core:bulk-cdk-core-load')
+    testImplementation project(':airbyte-cdk:bulk:core:bulk-cdk-core-base')
+    testImplementation(testFixtures(project(":airbyte-cdk:bulk:core:bulk-cdk-core-load")))
+    testImplementation(testFixtures(project(":airbyte-cdk:bulk:core:bulk-cdk-core-base")))
 }
