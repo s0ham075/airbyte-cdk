@@ -14,9 +14,9 @@ import io.micronaut.context.annotation.Requires
 import jakarta.inject.Named
 import jakarta.inject.Singleton
 
-@Factory
-@Replaces(factory = DestinationCatalogFactory::class)
-@Requires(env = ["test"])
+//@Factory
+//@Replaces(factory = DestinationCatalogFactory::class)
+//@Requires(env = ["test"])
 class MockCatalogFactory : DestinationCatalogFactory {
     companion object {
         val stream1 =

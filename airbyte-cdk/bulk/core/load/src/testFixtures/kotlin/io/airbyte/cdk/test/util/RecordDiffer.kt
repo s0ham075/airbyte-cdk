@@ -6,7 +6,9 @@ package io.airbyte.cdk.test.util
 
 import io.airbyte.cdk.data.AirbyteValue
 import io.airbyte.cdk.data.IntegerValue
+import io.airbyte.cdk.data.JsonToAirbyteValue
 import io.airbyte.cdk.data.NullValue
+import io.airbyte.cdk.data.ObjectTypeWithoutSchema
 import io.airbyte.cdk.data.ObjectValue
 import kotlin.reflect.jvm.jvmName
 
@@ -203,7 +205,9 @@ class RecordDiffer(
                     "generationId: Expected ${expectedRecord.generationId}, got ${actualRecord.generationId}\n"
                 )
             }
-            if (expectedRecord.airbyteMeta != actualRecord.airbyteMeta) {
+            // TODO clean this up + add null safety
+            //   (+ add comment explaining that intnode != longnode)
+            if (JsonToAirbyteValue().convert(expectedRecord.airbyteMeta!!, ObjectTypeWithoutSchema) != JsonToAirbyteValue().convert(actualRecord.airbyteMeta!!, ObjectTypeWithoutSchema)) {
                 diff.append(
                     "airbyteMeta: Expected ${expectedRecord.airbyteMeta}, got ${actualRecord.airbyteMeta}\n"
                 )
