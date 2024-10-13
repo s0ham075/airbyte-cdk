@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "airbyte"
+name = "airbyte-cdk"
 version = "0.1.0"
 description = "Airbyte open source connector code"
 authors = ["Airbyte <contact@airbyte.io>"]
