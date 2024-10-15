@@ -290,9 +290,6 @@ error_summary = true
 minversion = "6.2.5"
 addopts = "-r a --capture=no -vv --color=yes"
 
-[tool.setuptools]
-packages = ["airbyte_cdk"] 
-package-dir = {"" = "airbyte_cdk/python"}  
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
